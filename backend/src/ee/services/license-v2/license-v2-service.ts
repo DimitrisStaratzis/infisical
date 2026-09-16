@@ -1068,7 +1068,7 @@ export const licenseV2ServiceFactory = ({
 
   // Start a plan-scoped self-serve trial. The trial is granted immediately (no upfront charge);
   // cardSetupUrl, when present, is a best-effort card-setup checkout the client redirects to.
-  const startTrial = async ({ orgId, actor, productId, plan, email }: TStartBillingV2TrialDTO) => {
+  const startTrial = async ({ orgId, actor, productId, plan, email, returnPath }: TStartBillingV2TrialDTO) => {
     await ensureManageBilling(orgId, actor);
     // The trial has no Stripe customer yet, so the server creates one from the org's own name + the
     // authenticated user's email; neither is client-supplied.
@@ -1088,7 +1088,7 @@ export const licenseV2ServiceFactory = ({
       name: organization?.name,
       declaredUsage: resolved?.declaredUsage,
       // The trial's card-setup checkout redirects here; built server-side from SITE_URL like checkout.
-      returnUrl: buildReturnUrl(orgId)
+      returnUrl: buildReturnUrl(orgId, returnPath)
     });
     // awaiting_card redirects to a Stripe card-setup checkout; the trial is granted by webhook only
     // after it's completed, so hold the revalidation window open longer than an immediate trial_started.

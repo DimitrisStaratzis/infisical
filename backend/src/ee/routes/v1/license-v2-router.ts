@@ -532,7 +532,8 @@ export const registerLicenseV2Router = async (server: FastifyZodProvider) => {
       params: z.object({ organizationId: z.string().trim() }),
       body: z.object({
         productId: z.string().trim(),
-        plan: z.string().trim()
+        plan: z.string().trim(),
+        returnPath: ReturnPathSchema
       }),
       response: {
         200: z.object({
@@ -551,6 +552,7 @@ export const registerLicenseV2Router = async (server: FastifyZodProvider) => {
         actor: buildActor(req.permission),
         productId: req.body.productId,
         plan: req.body.plan,
+        returnPath: req.body.returnPath,
         email
       });
     }

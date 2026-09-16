@@ -1,0 +1,9 @@
+export type { UpgradeIntent } from "./upgrade-intents";
+export {
+  BillingProduct,
+  buildUpgradeReturnPath,
+  DynamicSecretsUpgradeIntent,
+  UpgradeContinuation,
+  UpgradeFeature
+} from "./upgrade-intents";
+export { UpgradeGate } from "./UpgradeGate";
