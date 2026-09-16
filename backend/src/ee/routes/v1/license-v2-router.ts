@@ -14,6 +14,7 @@ import { PostHogEventTypes } from "@app/services/telemetry/telemetry-types";
 const ReturnPathSchema = z
   .string()
   .trim()
+  .max(2048)
   .startsWith("/")
   .refine((path) => !path.startsWith("//") && !path.startsWith("/\\"), {
     message: "must be a relative path"

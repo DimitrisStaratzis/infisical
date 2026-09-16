@@ -34,16 +34,29 @@ type Props = {
 };
 
 export const UpgradeGate = ({ intent, isOpen, onOpenChange, onGranted }: Props) => {
-  const { currentOrg } = useOrganization();
+  const { currentOrg, isSubOrganization } = useOrganization();
   const { permission } = useOrgPermission();
   const billingOrgId = currentOrg.rootOrgId ?? currentOrg.id;
   const canManageBilling = permission.can(
     OrgPermissionBillingActions.ManageBilling,
     OrgPermissionSubjects.Billing
   );
-  const overview = useGetBillingV2Overview(billingOrgId, { enabled: isOpen && canManageBilling });
-  const catalog = useGetBillingV2Catalog(billingOrgId, { enabled: isOpen && canManageBilling });
+  const canLoadBilling = isOpen && canManageBilling && !isSubOrganization;
+  const overview = useGetBillingV2Overview(billingOrgId, { enabled: canLoadBilling });
+  const catalog = useGetBillingV2Catalog(billingOrgId, { enabled: canLoadBilling });
   const entitlement = overview.data?.entitlements[intent.productKey];
+
+  useEffect(() => {
+    if (!isOpen || !isSubOrganization) {
+      return;
+    }
+
+    const search = new URLSearchParams({
+      upgradeProduct: intent.productKey,
+      upgradeReturnPath: buildUpgradeReturnPath(intent, window.location)
+    });
+    window.location.assign(`/organizations/${billingOrgId}/billing?${search.toString()}`);
+  }, [billingOrgId, intent, isOpen, isSubOrganization]);
 
   useEffect(() => {
     if (isOpen && entitlement?.entitled) {
@@ -54,6 +67,23 @@ export const UpgradeGate = ({ intent, isOpen, onOpenChange, onGranted }: Props) 
 
   if (!isOpen || entitlement?.entitled) {
     return null;
+  }
+
+  if (isSubOrganization) {
+    return (
+      <Dialog open onOpenChange={onOpenChange}>
+        <DialogContent className="z-[70] sm:max-w-xl" overlayClassName="z-[70]">
+          <DialogHeader>
+            <DialogTitle>{intent.title}</DialogTitle>
+            <DialogDescription>{intent.description}</DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-3 text-sm text-muted">
+            <Loader size="xs" label="Opening billing" />
+            Opening billing for the root organization
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
   if (!canManageBilling) {

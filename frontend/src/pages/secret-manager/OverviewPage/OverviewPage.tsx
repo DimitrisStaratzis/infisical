@@ -1130,31 +1130,40 @@ const OverviewPageContent = () => {
   }, [navigate]);
 
   const handleDynamicSecretsGranted = useCallback(() => {
-    fetchOrgSubscription(orgId, true)
-      .then((refreshedSubscription) => {
-        queryClient.setQueryData(
-          subscriptionQueryKeys.getOrgSubsription(orgId),
-          refreshedSubscription
-        );
+    const refreshSubscription = async (attempt = 0): Promise<void> => {
+      const refreshedSubscription = await fetchOrgSubscription(orgId, true);
+      queryClient.setQueryData(
+        subscriptionQueryKeys.getOrgSubsription(orgId),
+        refreshedSubscription
+      );
 
-        if (!refreshedSubscription.dynamicSecret) {
-          createNotification({
-            type: "info",
-            text: "Your trial is being activated. Try adding a dynamic secret again in a moment."
-          });
-          return;
-        }
-
+      if (refreshedSubscription.dynamicSecret) {
         setIsDynamicSecretsUpgradeOpen(false);
         handlePopUpOpen("addDynamicSecret");
         clearUpgradeContinuation();
-      })
-      .catch(() => {
-        createNotification({
-          type: "error",
-          text: "Failed to refresh your subscription. Try adding a dynamic secret again."
+        return;
+      }
+
+      if (attempt < 4) {
+        await new Promise((resolve) => {
+          setTimeout(resolve, 1000);
         });
+        await refreshSubscription(attempt + 1);
+        return;
+      }
+
+      createNotification({
+        type: "info",
+        text: "Your trial is still being activated. Reload this page in a moment to continue."
       });
+    };
+
+    refreshSubscription().catch(() => {
+      createNotification({
+        type: "error",
+        text: "Failed to refresh your subscription. Try adding a dynamic secret again."
+      });
+    });
   }, [clearUpgradeContinuation, handlePopUpOpen, orgId, queryClient]);
 
   useEffect(() => {
