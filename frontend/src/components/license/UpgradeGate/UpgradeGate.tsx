@@ -72,7 +72,7 @@ export const UpgradeGate = ({ intent, isOpen, onOpenChange, onGranted }: Props) 
   if (isSubOrganization) {
     return (
       <Dialog open onOpenChange={onOpenChange}>
-        <DialogContent className="z-[70] sm:max-w-xl" overlayClassName="z-[70]">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{intent.title}</DialogTitle>
             <DialogDescription>{intent.description}</DialogDescription>
@@ -89,7 +89,7 @@ export const UpgradeGate = ({ intent, isOpen, onOpenChange, onGranted }: Props) 
   if (!canManageBilling) {
     return (
       <Dialog open onOpenChange={onOpenChange}>
-        <DialogContent className="z-[70] sm:max-w-xl" overlayClassName="z-[70]">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{intent.title}</DialogTitle>
             <DialogDescription>{intent.description}</DialogDescription>
@@ -114,7 +114,7 @@ export const UpgradeGate = ({ intent, isOpen, onOpenChange, onGranted }: Props) 
   if (overview.isPending || catalog.isPending) {
     return (
       <Dialog open onOpenChange={onOpenChange}>
-        <DialogContent className="z-[70] sm:max-w-xl" overlayClassName="z-[70]">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{intent.title}</DialogTitle>
             <DialogDescription>{intent.description}</DialogDescription>
@@ -132,7 +132,7 @@ export const UpgradeGate = ({ intent, isOpen, onOpenChange, onGranted }: Props) 
   if (overview.isError || catalog.isError || !overview.data || !product) {
     return (
       <Dialog open onOpenChange={onOpenChange}>
-        <DialogContent className="z-[70] sm:max-w-xl" overlayClassName="z-[70]">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{intent.title}</DialogTitle>
             <DialogDescription>{intent.description}</DialogDescription>
