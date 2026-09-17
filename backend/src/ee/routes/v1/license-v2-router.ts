@@ -19,6 +19,14 @@ const ReturnPathSchema = z
   .refine((path) => !path.startsWith("//") && !path.startsWith("/\\"), {
     message: "must be a relative path"
   })
+  .refine(
+    (path) =>
+      [...path].every((character) => {
+        const codePoint = character.charCodeAt(0);
+        return codePoint > 31 && codePoint !== 127 && character !== "\\";
+      }),
+    { message: "must not contain control characters or backslashes" }
+  )
   .optional();
 
 const BillingV2DimSchema = z.object({

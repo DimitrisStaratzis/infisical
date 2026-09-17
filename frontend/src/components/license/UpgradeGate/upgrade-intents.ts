@@ -32,3 +32,23 @@ export const buildUpgradeReturnPath = (intent: UpgradeIntent, location: Location
   search.set("upgradeContinuation", intent.continuation);
   return `${location.pathname}?${search.toString()}${location.hash}`;
 };
+
+export const getSafeUpgradeReturnPath = (returnPath: string | null, origin: string) => {
+  if (!returnPath || returnPath.length > 2048 || !returnPath.startsWith("/")) {
+    return null;
+  }
+
+  const hasUnsafeCharacter = [...returnPath].some((character) => {
+    const codePoint = character.charCodeAt(0);
+    return codePoint <= 31 || codePoint === 127 || character === "\\";
+  });
+  if (hasUnsafeCharacter) {
+    return null;
+  }
+
+  try {
+    return new URL(returnPath, origin).origin === new URL(origin).origin ? returnPath : null;
+  } catch {
+    return null;
+  }
+};

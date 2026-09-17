@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
 import { useTranslation } from "react-i18next";
 
+import { getSafeUpgradeReturnPath } from "@app/components/license/UpgradeGate";
 import { createNotification } from "@app/components/notifications";
 import { OrgPermissionCan } from "@app/components/permissions";
 import { PageHeader } from "@app/components/v2";
@@ -49,14 +50,10 @@ export const BillingV2Page = () => {
   const [removeProdId, setRemoveProdId] = useState<string | null>(null);
   const deepLinkSearch = new URLSearchParams(window.location.search);
   const upgradeProduct = deepLinkSearch.get("upgradeProduct");
-  const requestedReturnPath = deepLinkSearch.get("upgradeReturnPath");
-  const upgradeReturnPath =
-    requestedReturnPath?.startsWith("/") &&
-    requestedReturnPath.length <= 2048 &&
-    !requestedReturnPath.startsWith("//") &&
-    !requestedReturnPath.startsWith("/\\")
-      ? requestedReturnPath
-      : null;
+  const upgradeReturnPath = getSafeUpgradeReturnPath(
+    deepLinkSearch.get("upgradeReturnPath"),
+    window.location.origin
+  );
 
   useEffect(() => {
     if (flow || !upgradeProduct || !catalog.some((product) => product.id === upgradeProduct)) {

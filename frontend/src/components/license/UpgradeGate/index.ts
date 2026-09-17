@@ -3,6 +3,7 @@ export {
   BillingProduct,
   buildUpgradeReturnPath,
   DynamicSecretsUpgradeIntent,
+  getSafeUpgradeReturnPath,
   UpgradeContinuation,
   UpgradeFeature
 } from "./upgrade-intents";

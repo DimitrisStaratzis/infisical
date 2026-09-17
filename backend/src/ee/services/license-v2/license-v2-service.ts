@@ -853,7 +853,12 @@ export const licenseV2ServiceFactory = ({
     }
     const path = returnPath && returnPath.startsWith("/") ? returnPath : `/organizations/${orgId}/billing`;
     try {
-      return new URL(path, envConfig.SITE_URL).toString();
+      const siteUrl = new URL(envConfig.SITE_URL);
+      const returnUrl = new URL(path, siteUrl);
+      if (returnUrl.origin !== siteUrl.origin) {
+        throw new Error("Return URL must use the application origin");
+      }
+      return returnUrl.toString();
     } catch {
       throw new InternalServerError({ message: "Failed to build a billing return URL" });
     }
