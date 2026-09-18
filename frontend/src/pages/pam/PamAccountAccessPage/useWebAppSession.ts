@@ -236,17 +236,30 @@ export const useWebAppSession = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const pointerPosition = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  // object-contain letterboxes the frame inside the element, so the element's box is not the drawn
+  // area. Mapping through the box alone would offset every click by the letterbox margin.
+  const toViewport = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
+
     const rect = canvas.getBoundingClientRect();
-    // The canvas is letterboxed to preserve aspect ratio, so displayed size rarely equals the
-    // gateway's viewport; coordinates are scaled back into viewport space.
+    const scale = Math.min(rect.width / VIEWPORT_WIDTH, rect.height / VIEWPORT_HEIGHT);
+    if (scale <= 0) return { x: 0, y: 0 };
+
+    const offsetX = (rect.width - VIEWPORT_WIDTH * scale) / 2;
+    const offsetY = (rect.height - VIEWPORT_HEIGHT * scale) / 2;
+
+    const clamp = (v: number, max: number) => Math.max(0, Math.min(v, max));
     return {
-      x: ((e.clientX - rect.left) / rect.width) * VIEWPORT_WIDTH,
-      y: ((e.clientY - rect.top) / rect.height) * VIEWPORT_HEIGHT
+      x: clamp((clientX - rect.left - offsetX) / scale, VIEWPORT_WIDTH),
+      y: clamp((clientY - rect.top - offsetY) / scale, VIEWPORT_HEIGHT)
     };
   }, []);
+
+  const pointerPosition = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => toViewport(e.clientX, e.clientY),
+    [toViewport]
+  );
 
   const canvasHandlers = {
     onMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -306,20 +319,18 @@ export const useWebAppSession = ({
   const onWheel = useCallback(
     (e: WheelEvent) => {
       e.preventDefault();
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
+      const { x, y } = toViewport(e.clientX, e.clientY);
       send({
         kind: "mouse",
         action: "wheel",
-        x: ((e.clientX - rect.left) / rect.width) * VIEWPORT_WIDTH,
-        y: ((e.clientY - rect.top) / rect.height) * VIEWPORT_HEIGHT,
+        x,
+        y,
         deltaX: e.deltaX,
         deltaY: e.deltaY,
         modifiers: modifierMask(e)
       });
     },
-    [send]
+    [send, toViewport]
   );
 
   // Registered natively because React's onWheel is passive, so preventDefault there cannot stop the

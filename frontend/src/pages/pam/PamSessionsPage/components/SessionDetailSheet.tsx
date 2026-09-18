@@ -487,6 +487,17 @@ export const SessionDetailSheet = ({ sessionId, isOpen, onOpenChange, onTerminat
     session.accountType === PamAccountType.WindowsAd;
   const isWebSession = session.accountType === PamAccountType.NirvanaDashboard;
 
+  // Frames are only emitted when the page changes, so an idle tail produces no events and the last
+  // event lands well before the session ended. The timeline follows the session's wall clock so it
+  // matches the duration shown elsewhere, holding the final frame over the idle period.
+  const sessionDurationMs = (() => {
+    const start = session.startedAt ?? session.createdAt;
+    const end = session.endedAt;
+    if (!start || !end) return undefined;
+    const ms = new Date(end).getTime() - new Date(start).getTime();
+    return ms > 0 ? ms : undefined;
+  })();
+
   const recordingTabs = [
         {
           value: "recording",
@@ -520,7 +531,11 @@ export const SessionDetailSheet = ({ sessionId, isOpen, onOpenChange, onTerminat
                       }
                     >
                       {isWebSession ? (
-                        <WebReplayView events={filteredEvents} isStreaming={isActive} />
+                        <WebReplayView
+                          events={filteredEvents}
+                          isStreaming={isActive}
+                          totalDurationMs={sessionDurationMs}
+                        />
                       ) : (
                         <RdpReplayView events={filteredEvents} isStreaming={isActive} />
                       )}

@@ -57,11 +57,16 @@ export const WebReplayView = ({ events, isStreaming = false, totalDurationMs }: 
     const parsed = parseRange(events, 0, events.length);
     lastParsedIndexRef.current = events.length;
 
-    const player = new WebReplayPlayer(parsed, canvas, {
-      onTick: setCurrentMs,
-      onEnded: () => setIsPlaying(false),
-      onBuffering: setIsBuffering
-    });
+    const player = new WebReplayPlayer(
+      parsed,
+      canvas,
+      {
+        onTick: setCurrentMs,
+        onEnded: () => setIsPlaying(false),
+        onBuffering: setIsBuffering
+      },
+      totalDurationMs
+    );
     playerRef.current = player;
 
     setNavigations(parsed.filter((e) => e.type === "navigation"));

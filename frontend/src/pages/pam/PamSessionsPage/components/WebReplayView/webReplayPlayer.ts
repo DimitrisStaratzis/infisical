@@ -48,8 +48,18 @@ export class WebReplayPlayer {
 
   private decoding = false;
 
-  constructor(events: WebEvent[], canvas: HTMLCanvasElement, callbacks: PlayerCallbacks) {
+  // Wall-clock length of the session, which exceeds the last event when the page sat idle. Playback
+  // holds the final frame over that tail instead of ending early.
+  private durationMs: number;
+
+  constructor(
+    events: WebEvent[],
+    canvas: HTMLCanvasElement,
+    callbacks: PlayerCallbacks,
+    durationMs = 0
+  ) {
     this.events = events;
+    this.durationMs = durationMs;
     this.canvas = canvas;
     const c = canvas.getContext("2d");
     if (!c) throw new Error("2d context unavailable");
@@ -59,7 +69,7 @@ export class WebReplayPlayer {
 
   get totalMs(): number {
     const last = this.events[this.events.length - 1];
-    return last ? last.elapsedMs : 0;
+    return Math.max(last ? last.elapsedMs : 0, this.durationMs);
   }
 
   get currentMs(): number {
@@ -76,11 +86,11 @@ export class WebReplayPlayer {
 
   play = () => {
     if (this.wantPlay) return;
-    if (this.streamComplete && this.index >= this.events.length) {
+    if (this.streamComplete && this.index >= this.events.length && this.clockMs >= this.totalMs) {
       this.resetForReplay();
     }
     this.wantPlay = true;
-    if (this.index >= this.events.length) {
+    if (this.index >= this.events.length && !this.streamComplete) {
       this.setBuffering(true);
       return;
     }
@@ -196,7 +206,7 @@ export class WebReplayPlayer {
 
     this.callbacks.onTick(this.clockMs);
 
-    if (this.index >= this.events.length) {
+    if (this.index >= this.events.length && this.clockMs >= this.totalMs) {
       this.raf = null;
       this.wallStart = null;
       if (this.streamComplete) {

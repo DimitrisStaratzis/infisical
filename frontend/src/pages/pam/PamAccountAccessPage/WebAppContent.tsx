@@ -54,7 +54,7 @@ export const WebAppContent = ({ account, reason, mfaSessionId }: WebAppContentPr
           width={viewport.width}
           height={viewport.height}
           tabIndex={0}
-          className="max-h-full max-w-full object-contain outline-none"
+          className="h-full w-full object-contain outline-none"
           {...canvasHandlers}
         />
         {isConnecting && (
