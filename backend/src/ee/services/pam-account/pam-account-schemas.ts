@@ -901,6 +901,30 @@ export const ACCOUNT_TYPE_CONFIGS = {
         tooltip: "A client secret for the service principal. Stored encrypted and never returned in read responses."
       }
     }
+  },
+
+  [PamAccountType.NirvanaDashboard]: {
+    name: "Nirvana Dashboard",
+    icon: "Nirvana Labs.png",
+    connectionDetails: z.object({
+      url: z
+        .string()
+        .trim()
+        .url("Must be a valid URL")
+        .max(2048)
+        // The gateway navigates a browser to this value, so a non-http scheme would reach the
+        // gateway's own filesystem or an internal handler rather than a web app.
+        .refine((v) => v.startsWith("http://") || v.startsWith("https://"), "Must be an http or https URL")
+    }),
+    credentials: z.object({}),
+    sanitizedCredentials: z.object({}),
+    ui: {
+      url: {
+        label: "Dashboard URL",
+        tooltip:
+          "URL of the internal web app, as reachable from the gateway. The session browser runs at the gateway and opens only this URL."
+      }
+    }
   }
 } as const satisfies Partial<
   Record<
@@ -1014,7 +1038,8 @@ export const extractGatewayTarget = async (
         host: (validated as { host: string; port: number }).host,
         port: (validated as { host: string; port: number }).port
       };
-    case PamAccountType.Kubernetes: {
+    case PamAccountType.Kubernetes:
+    case PamAccountType.NirvanaDashboard: {
       const { url } = validated as { url: string };
       const parsed = new URL(url);
       const defaultPort = parsed.protocol === "http:" ? 80 : 443;
