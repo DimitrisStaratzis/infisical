@@ -912,8 +912,6 @@ export const ACCOUNT_TYPE_CONFIGS = {
         .trim()
         .url("Must be a valid URL")
         .max(2048)
-        // The gateway navigates a browser to this value, so a non-http scheme would reach the
-        // gateway's own filesystem or an internal handler rather than a web app.
         .refine((v) => v.startsWith("http://") || v.startsWith("https://"), "Must be an http or https URL")
     }),
     credentials: z.object({}),

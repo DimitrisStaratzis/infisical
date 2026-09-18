@@ -7,6 +7,7 @@ import { PamAccountType, TPamAccount, useGetPamAccountById } from "@app/hooks/ap
 import { PamDataExplorerPage } from "@app/pages/pam/PamDataExplorerPage/PamDataExplorerPage";
 
 import { AwsIamAccessContent } from "./AwsIamAccessContent";
+import { WebAppContent } from "./WebAppContent";
 import { DisconnectedScreen } from "./DisconnectedScreen";
 import { RdpLauncher } from "./RdpLauncher";
 import { SessionAccessGate } from "./ReasonGate";
@@ -136,6 +137,9 @@ const PageContent = () => {
           account.accountType === PamAccountType.Snowflake
         ) {
           return <PamDataExplorerPage reason={reason} mfaSessionId={mfaSessionId} />;
+        }
+        if (account.accountType === PamAccountType.NirvanaDashboard) {
+          return <WebAppContent account={account} reason={reason} mfaSessionId={mfaSessionId} />;
         }
         if (
           account.accountType === PamAccountType.Windows ||

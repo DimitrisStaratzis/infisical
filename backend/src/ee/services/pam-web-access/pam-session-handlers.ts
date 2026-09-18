@@ -47,5 +47,10 @@ export const SESSION_HANDLERS: Partial<Record<PamAccountType, TSessionHandlerEnt
   [PamAccountType.WindowsAd]: {
     gatewayAccountType: PamAccountType.Windows,
     handler: handleRdpSession
+  },
+  // TODO check
+  [PamAccountType.NirvanaDashboard]: {
+    gatewayAccountType: PamAccountType.NirvanaDashboard,
+    handler: handleRdpSession
   }
 };
