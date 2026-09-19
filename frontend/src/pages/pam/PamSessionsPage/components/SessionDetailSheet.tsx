@@ -45,6 +45,7 @@ import { PamDetailSheet } from "../../components/PamDetailSheet";
 import { capitalize, formatDuration, STATUS_BADGE } from "../constants";
 
 const RdpReplayView = lazy(() => import("./RdpReplayView/RdpReplayView"));
+const WebReplayView = lazy(() => import("./WebReplayView/WebReplayView"));
 
 type Props = {
   sessionId?: string;
@@ -80,7 +81,45 @@ const cleanLegacyTerminalOutput = (raw: string): string =>
     .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "")
     .trim();
 
+// Frame events carry a base64 JPEG, so their envelope is decoded from a prefix long enough to read
+// the type field rather than in full: rendering one as text would produce megabytes per row.
+const peekWebEventType = (data: string): string | null => {
+  try {
+    const head = decodeBase64Utf8(data.slice(0, 120));
+    return /"type"\s*:\s*"([a-z_]+)"/.exec(head)?.[1] ?? null;
+  } catch {
+    return null;
+  }
+};
+
+const formatWebLogText = (log: TPamSessionLog): string | null => {
+  if (!("channelType" in log) || (log as { channelType?: string }).channelType !== "web")
+    return null;
+  if (!("data" in log) || typeof log.data !== "string") return "";
+
+  if (peekWebEventType(log.data) === "target_frame") return "";
+
+  let rec: Record<string, unknown>;
+  try {
+    rec = JSON.parse(decodeBase64Utf8(log.data)) as Record<string, unknown>;
+  } catch {
+    return "";
+  }
+
+  if (rec.type === "navigation") return `Opened ${String(rec.url ?? "")}`;
+  if (rec.type === "mouse") {
+    const at = `${Math.round(Number(rec.x ?? 0))}, ${Math.round(Number(rec.y ?? 0))}`;
+    if (rec.action === "wheel") return `Scrolled at ${at}`;
+    if (rec.action === "down") return `Pressed ${String(rec.button ?? "left")} button at ${at}`;
+    if (rec.action === "up") return `Released ${String(rec.button ?? "left")} button at ${at}`;
+  }
+  return "";
+};
+
 const getLogText = (log: TPamSessionLog): string => {
+  const webText = formatWebLogText(log);
+  if (webText !== null) return webText;
+
   if ("input" in log && "output" in log) {
     return [log.input, log.output].filter(Boolean).join(" ");
   }
@@ -447,86 +486,115 @@ export const SessionDetailSheet = ({ sessionId, isOpen, onOpenChange, onTerminat
   const isRdpSession =
     session.accountType === PamAccountType.Windows ||
     session.accountType === PamAccountType.WindowsAd;
+  const isWebSession = session.accountType === PamAccountType.NirvanaDashboard;
 
-  const tabs = isRdpSession
-    ? [
-        {
-          value: "recording",
-          label: "Session Recording",
-          icon: <MonitorPlayIcon className="mr-1.5 size-4" />,
-          content: (
-            <div className="flex flex-1 flex-col gap-4 p-4">
-              <Card>
-                <CardHeader className="flex items-center justify-between border-b">
-                  <CardTitle className="text-base">Session Recording</CardTitle>
-                  {isActive && (
-                    <Badge variant="pam">
-                      <LiveDot className="bg-product-pam" />
-                      Live
-                    </Badge>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  {showLogSkeleton ? (
-                    <div className="flex flex-col gap-2 p-4">
-                      {Array.from({ length: 3 }).map((_, i) => (
-                        <Skeleton key={`rec-skeleton-${i + 1}`} className="h-4 w-full" />
-                      ))}
+  // Frames are only emitted when the page changes, so an idle tail produces no events and the last
+  // event lands well before the session ended. The timeline follows the session's wall clock so it
+  // matches the duration shown elsewhere, holding the final frame over the idle period.
+  const sessionDurationMs = (() => {
+    const start = session.startedAt ?? session.createdAt;
+    const end = session.endedAt;
+    if (!start || !end) return undefined;
+    const ms = new Date(end).getTime() - new Date(start).getTime();
+    return ms > 0 ? ms : undefined;
+  })();
+
+  const recordingTabs = [
+    {
+      value: "recording",
+      label: "Session Recording",
+      icon: <MonitorPlayIcon className="mr-1.5 size-4" />,
+      content: (
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <Card>
+            <CardHeader className="flex items-center justify-between border-b">
+              <CardTitle className="text-base">Session Recording</CardTitle>
+              {isActive && (
+                <Badge variant="pam">
+                  <LiveDot className="bg-product-pam" />
+                  Live
+                </Badge>
+              )}
+            </CardHeader>
+            <CardContent>
+              {showLogSkeleton ? (
+                <div className="flex flex-col gap-2 p-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={`rec-skeleton-${i + 1}`} className="h-4 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center p-10 text-sm text-muted">
+                      Loading player...
                     </div>
-                  ) : (
-                    <Suspense
-                      fallback={
-                        <div className="flex items-center justify-center p-10 text-sm text-muted">
-                          Loading player...
-                        </div>
-                      }
-                    >
-                      <RdpReplayView events={filteredEvents} isStreaming={isActive} />
-                    </Suspense>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )
-        }
-      ]
-    : [
-        {
-          value: "logs",
-          label: "Session Logs",
-          icon: <ClipboardListIcon className="mr-1.5 size-4" />,
-          content: (
-            <div className="flex flex-1 flex-col gap-4 p-4">
-              <Card>
-                <CardHeader className="flex items-center justify-between border-b">
-                  <CardTitle className="text-base">Session Logs</CardTitle>
-                  {isActive && (
-                    <Badge variant="pam">
-                      <LiveDot className="bg-product-pam" />
-                      Live
-                    </Badge>
-                  )}
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <SearchIcon />
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      value={logSearch}
-                      onChange={(e) => setLogSearch(e.target.value)}
-                      placeholder="Search logs..."
+                  }
+                >
+                  {isWebSession ? (
+                    <WebReplayView
+                      events={filteredEvents}
+                      isStreaming={isActive}
+                      totalDurationMs={sessionDurationMs}
                     />
-                  </InputGroup>
-                  <div className="overflow-hidden rounded-md border border-border bg-popover">
-                    {logContent}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )
-        }
-      ];
+                  ) : (
+                    <RdpReplayView events={filteredEvents} isStreaming={isActive} />
+                  )}
+                </Suspense>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+  ];
+
+  const logTabs = [
+    {
+      value: "logs",
+      label: "Session Logs",
+      icon: <ClipboardListIcon className="mr-1.5 size-4" />,
+      content: (
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <Card>
+            <CardHeader className="flex items-center justify-between border-b">
+              <CardTitle className="text-base">Session Logs</CardTitle>
+              {isActive && (
+                <Badge variant="pam">
+                  <LiveDot className="bg-product-pam" />
+                  Live
+                </Badge>
+              )}
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <InputGroup>
+                <InputGroupAddon>
+                  <SearchIcon />
+                </InputGroupAddon>
+                <InputGroupInput
+                  value={logSearch}
+                  onChange={(e) => setLogSearch(e.target.value)}
+                  placeholder="Search logs..."
+                />
+              </InputGroup>
+              <div className="overflow-hidden rounded-md border border-border bg-popover">
+                {logContent}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+  ];
+
+  // A web session gets both: the frames are the visual record, while the click and navigation
+  // stream is readable and searchable in a way an RDP recording is not.
+  let tabs = logTabs;
+  if (isWebSession) {
+    tabs = [...recordingTabs, ...logTabs];
+  } else if (isRdpSession) {
+    tabs = recordingTabs;
+  }
 
   return (
     <PamDetailSheet

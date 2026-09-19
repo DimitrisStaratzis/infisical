@@ -112,6 +112,14 @@ export const DEFAULT_ACCOUNT_TEMPLATES: TDefaultTemplate[] = [
     }
   },
   {
+    name: "nirvana-dashboard",
+    type: PamAccountType.NirvanaDashboard,
+    settings: {
+      recordingEnabled: true,
+      recordingStorageBackend: PamRecordingStorageBackend.Postgres
+    }
+  },
+  {
     name: "azure-cli",
     type: PamAccountType.AzureCli,
     settings: {

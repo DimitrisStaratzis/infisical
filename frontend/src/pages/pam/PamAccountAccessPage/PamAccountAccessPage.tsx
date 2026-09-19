@@ -12,6 +12,7 @@ import { RdpLauncher } from "./RdpLauncher";
 import { SessionAccessGate } from "./ReasonGate";
 import { useWebAccessSession } from "./useWebAccessSession";
 import { WebAccessStatusCard } from "./WebAccessStatusCard";
+import { WebAppContent } from "./WebAppContent";
 
 const TerminalContent = ({
   account,
@@ -136,6 +137,9 @@ const PageContent = () => {
           account.accountType === PamAccountType.Snowflake
         ) {
           return <PamDataExplorerPage reason={reason} mfaSessionId={mfaSessionId} />;
+        }
+        if (account.accountType === PamAccountType.NirvanaDashboard) {
+          return <WebAppContent account={account} reason={reason} mfaSessionId={mfaSessionId} />;
         }
         if (
           account.accountType === PamAccountType.Windows ||

@@ -12,7 +12,8 @@ export enum PamAccountType {
   GcpServiceAccount = "gcp-service-account",
   AzureCli = "azure-cli",
   Windows = "windows",
-  WindowsAd = "windows-ad"
+  WindowsAd = "windows-ad",
+  NirvanaDashboard = "nirvana-dashboard"
 }
 
 export enum PamDiscoveryType {
