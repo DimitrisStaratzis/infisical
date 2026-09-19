@@ -43,7 +43,7 @@ const MOUSE_BUTTONS = ["left", "middle", "right"] as const;
 
 // Chromium expects the DOM modifier bitmask: alt=1, ctrl=2, meta=4, shift=8.
 const modifierMask = (e: MouseEvent | KeyboardEvent) =>
-  (e.altKey ? 1 : 0) | (e.ctrlKey ? 2 : 0) | (e.metaKey ? 4 : 0) | (e.shiftKey ? 8 : 0);
+  (e.altKey ? 1 : 0) + (e.ctrlKey ? 2 : 0) + (e.metaKey ? 4 : 0) + (e.shiftKey ? 8 : 0);
 
 export const useWebAppSession = ({
   accountId,
@@ -191,7 +191,7 @@ export const useWebAppSession = ({
           offset += HEADER_BYTES + length;
 
           if (msgType === MSG_FRAME) {
-            void drawFrame(payload.slice());
+            drawFrame(payload.slice()).catch(() => {});
           } else if (msgType === MSG_NAVIGATION) {
             try {
               const parsed = JSON.parse(new TextDecoder().decode(payload)) as { url?: string };
@@ -228,7 +228,7 @@ export const useWebAppSession = ({
   // Mount-once, matching useRdpSession: every connect mints a ticket and creates a server-side PAM
   // session, so re-running this when a prop identity changes would strand real sessions.
   useEffect(() => {
-    void connect();
+    connect().catch(() => {});
     return () => {
       generationRef.current += 1;
       teardown();

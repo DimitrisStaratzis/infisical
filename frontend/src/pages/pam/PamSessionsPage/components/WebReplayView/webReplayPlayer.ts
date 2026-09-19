@@ -126,7 +126,7 @@ export class WebReplayPlayer {
     this.index = nextIndex;
 
     if (frame) {
-      void this.drawFrame(frame.payload as Uint8Array);
+      this.drawFrame(frame.payload as Uint8Array).catch(() => {});
     } else {
       this.clearCanvas();
     }
@@ -224,7 +224,7 @@ export class WebReplayPlayer {
   // Input and navigation events carry the audit trail rather than pixels: the frames already show
   // their result, so replay only has to draw.
   private apply = (ev: WebEvent) => {
-    if (ev.type === "target_frame" && ev.payload) void this.drawFrame(ev.payload);
+    if (ev.type === "target_frame" && ev.payload) this.drawFrame(ev.payload).catch(() => {});
   };
 
   // Decoding is async while the tick loop is not, so a frame arriving mid-decode replaces the

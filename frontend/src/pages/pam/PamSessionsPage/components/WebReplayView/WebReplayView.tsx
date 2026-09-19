@@ -144,10 +144,10 @@ export const WebReplayView = ({ events, isStreaming = false, totalDurationMs }: 
       </div>
 
       <div className="flex items-center gap-3">
-        <IconButton ariaLabel={isPlaying ? "Pause" : "Play"} variant="outline" onClick={togglePlay}>
+        <IconButton aria-label={isPlaying ? "Pause" : "Play"} variant="outline" onClick={togglePlay}>
           {isPlaying ? <PauseIcon className="size-4" /> : <PlayIcon className="size-4" />}
         </IconButton>
-        <IconButton ariaLabel="Restart" variant="outline" onClick={restart}>
+        <IconButton aria-label="Restart" variant="outline" onClick={restart}>
           <RotateCcwIcon className="size-4" />
         </IconButton>
 

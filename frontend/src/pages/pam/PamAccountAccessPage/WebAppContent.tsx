@@ -18,17 +18,25 @@ type WebAppContentProps = {
 export const WebAppContent = ({ account, reason, mfaSessionId }: WebAppContentProps) => {
   const [sessionEnded, setSessionEnded] = useState(false);
 
-  const { canvasRef, canvasHandlers, viewport, isConnected, currentUrl, error, disconnect, reconnect } =
-    useWebAppSession({
-      accountId: account.id,
-      reason,
-      mfaSessionId,
-      onSessionEnd: () => setSessionEnded(true)
-    });
+  const {
+    canvasRef,
+    canvasHandlers,
+    viewport,
+    isConnected,
+    currentUrl,
+    error,
+    disconnect,
+    reconnect
+  } = useWebAppSession({
+    accountId: account.id,
+    reason,
+    mfaSessionId,
+    onSessionEnd: () => setSessionEnded(true)
+  });
 
   const handleReconnect = () => {
     setSessionEnded(false);
-    void reconnect();
+    reconnect().catch(() => {});
   };
 
   const isConnecting = !isConnected && !error && !sessionEnded;
@@ -58,7 +66,10 @@ export const WebAppContent = ({ account, reason, mfaSessionId }: WebAppContentPr
           {...canvasHandlers}
         />
         {isConnecting && (
-          <ContentLoader text="Opening web application..." className="absolute inset-0 z-10 h-full" />
+          <ContentLoader
+            text="Opening web application..."
+            className="absolute inset-0 z-10 h-full"
+          />
         )}
         {error && (
           <WebAccessStatusCard
@@ -80,7 +91,11 @@ export const WebAppContent = ({ account, reason, mfaSessionId }: WebAppContentPr
           <span className={`inline-block size-2 rounded-full ${statusDotClass}`} />
           <span className="text-muted">{statusLabel}</span>
           {isConnected && (
-            <button type="button" onClick={disconnect} className="ml-2 text-muted hover:text-danger">
+            <button
+              type="button"
+              onClick={disconnect}
+              className="ml-2 text-muted hover:text-danger"
+            >
               Disconnect
             </button>
           )}
@@ -88,7 +103,8 @@ export const WebAppContent = ({ account, reason, mfaSessionId }: WebAppContentPr
         <div className="flex items-center gap-4">
           {currentUrl && (
             <span className="max-w-md truncate">
-              <span className="text-muted">URL:</span> <span className="text-muted">{currentUrl}</span>
+              <span className="text-muted">URL:</span>{" "}
+              <span className="text-muted">{currentUrl}</span>
             </span>
           )}
           <span>

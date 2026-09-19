@@ -7,12 +7,12 @@ import { PamAccountType, TPamAccount, useGetPamAccountById } from "@app/hooks/ap
 import { PamDataExplorerPage } from "@app/pages/pam/PamDataExplorerPage/PamDataExplorerPage";
 
 import { AwsIamAccessContent } from "./AwsIamAccessContent";
-import { WebAppContent } from "./WebAppContent";
 import { DisconnectedScreen } from "./DisconnectedScreen";
 import { RdpLauncher } from "./RdpLauncher";
 import { SessionAccessGate } from "./ReasonGate";
 import { useWebAccessSession } from "./useWebAccessSession";
 import { WebAccessStatusCard } from "./WebAccessStatusCard";
+import { WebAppContent } from "./WebAppContent";
 
 const TerminalContent = ({
   account,

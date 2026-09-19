@@ -22,7 +22,7 @@ export async function up(knex: Knex): Promise<void> {
   if (!pamProjects.length) return;
 
   const rows = pamProjects.map(({ id }) => ({
-    projectId: id as string,
+    projectId: id,
     name: TEMPLATE_NAME,
     type: PamAccountType.NirvanaDashboard,
     settings: TEMPLATE_SETTINGS
